@@ -1,0 +1,1719 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        HNI Portfolio Stress Test | AAFM India
+    </title>
+
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+    <script
+        src="https://cdn.plot.ly/plotly-2.35.2.min.js">
+    </script>
+
+</head>
+
+
+<body>
+
+<div class="app">
+
+    <!-- ================================================
+         SIDEBAR
+    ================================================= -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+
+            <div class="brand-mark">
+                A
+            </div>
+
+            <div>
+
+                <strong>
+                    AAFM INDIA
+                </strong>
+
+                <span>
+                    WEALTH ANALYTICS
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="sidebar-intro">
+
+            <span class="section-number">
+                01 / PORTFOLIO
+            </span>
+
+            <h2>
+                Client Portfolio
+            </h2>
+
+            <p>
+                Enter the client's current portfolio
+                allocation. All amounts are in ₹ crore.
+            </p>
+
+        </div>
+
+
+        <div class="portfolio-fields">
+
+            {% for asset, default in inputs %}
+
+            <div class="input-group">
+
+                <label>
+                    {{ asset }}
+                </label>
+
+                <div class="money-input">
+
+                    <span>₹</span>
+
+                    <input
+                        type="number"
+                        class="holding"
+                        data-asset="{{ asset }}"
+                        min="0"
+                        step="0.5"
+                        value="{{ default }}"
+                    >
+
+                    <small>CR</small>
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+
+        <div class="sidebar-divider"></div>
+
+
+        <div class="sidebar-intro compact">
+
+            <span class="section-number">
+                02 / LEVERAGE
+            </span>
+
+            <h2>
+                Debt Profile
+            </h2>
+
+        </div>
+
+
+        <div class="input-group">
+
+            <label>
+                Modified Duration
+            </label>
+
+            <div class="suffix-input">
+
+                <input
+                    type="number"
+                    id="duration"
+                    min="0"
+                    max="30"
+                    step="0.5"
+                    value="4"
+                >
+
+                <span>YEARS</span>
+
+            </div>
+
+        </div>
+
+
+        <div class="input-group">
+
+            <label>
+                Convexity
+            </label>
+
+            <input
+                type="number"
+                id="convexity"
+                min="0"
+                max="500"
+                step="5"
+                value="30"
+            >
+
+        </div>
+
+
+        <div class="input-group">
+
+            <label>
+                Loan Against Shares
+            </label>
+
+            <div class="money-input">
+
+                <span>₹</span>
+
+                <input
+                    type="number"
+                    id="loan"
+                    min="0"
+                    step="0.5"
+                    value="0"
+                >
+
+                <small>CR</small>
+
+            </div>
+
+        </div>
+
+
+        <div class="input-group">
+
+            <div class="range-heading">
+
+                <label>
+                    Maximum LTV
+                </label>
+
+                <strong id="max_ltv-val">
+                    50%
+                </strong>
+
+            </div>
+
+            <input
+                type="range"
+                id="max_ltv"
+                min="10"
+                max="80"
+                value="50"
+            >
+
+            <div class="range-scale">
+
+                <span>10%</span>
+
+                <span>80%</span>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <!-- ================================================
+         MAIN
+    ================================================= -->
+
+    <main class="main">
+
+        <!-- HEADER -->
+
+        <header class="topbar">
+
+            <div>
+
+                <span class="eyebrow">
+                    PORTFOLIO RISK LAB
+                </span>
+
+                <h1>
+                    HNI Portfolio
+                    <em>Stress Test</em>
+                </h1>
+
+            </div>
+
+            <div class="status-pill">
+
+                <span></span>
+
+                LIVE ANALYSIS
+
+            </div>
+
+        </header>
+
+
+        <p class="intro-text">
+
+            See how a client's portfolio could respond
+            to major historical crises or a custom
+            market shock. Analyse wealth impact,
+            liquidity and leverage from one dashboard.
+
+        </p>
+
+
+        <!-- HERO RESULT -->
+
+        <section
+            class="hero-result"
+            id="hero"
+        >
+
+            <div class="loading-state">
+
+                <span>
+                    ANALYSING PORTFOLIO
+                </span>
+
+            </div>
+
+        </section>
+
+
+        <!-- TABS -->
+
+        <nav class="tabs">
+
+            <button
+                class="tab active"
+                data-panel="p-hist"
+            >
+                <span>01</span>
+                Historical Scenarios
+            </button>
+
+            <button
+                class="tab"
+                data-panel="p-custom"
+            >
+                <span>02</span>
+                Build Your Own Shock
+            </button>
+
+            <button
+                class="tab"
+                data-panel="p-compare"
+            >
+                <span>03</span>
+                Compare All Scenarios
+            </button>
+
+        </nav>
+
+
+        <!-- ============================================
+             HISTORICAL
+        ============================================= -->
+
+        <section
+            class="panel active"
+            id="p-hist"
+        >
+
+            <div class="panel-heading">
+
+                <div>
+
+                    <span class="section-number">
+                        HISTORICAL STRESS
+                    </span>
+
+                    <h2>
+                        Replay a market crisis
+                    </h2>
+
+                </div>
+
+
+                <div class="scenario-control">
+
+                    <label>
+                        SELECT SCENARIO
+                    </label>
+
+                    <select id="scenario">
+
+                        {% for s in scenarios %}
+
+                        <option value="{{ s }}">
+                            {{ s }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+            </div>
+
+
+            <div id="hist-out">
+
+                <div class="cards"></div>
+
+                <div class="notes"></div>
+
+                <div class="chart-card">
+
+                    <div
+                        class="chart"
+                        id="hist-chart"
+                    ></div>
+
+                </div>
+
+
+                <details>
+
+                    <summary>
+                        View asset-level stress breakdown
+                    </summary>
+
+                    <div class="table"></div>
+
+                </details>
+
+            </div>
+
+        </section>
+
+
+        <!-- ============================================
+             CUSTOM SHOCK
+        ============================================= -->
+
+        <section
+            class="panel"
+            id="p-custom"
+        >
+
+            <div class="panel-heading">
+
+                <div>
+
+                    <span class="section-number">
+                        CUSTOM STRESS
+                    </span>
+
+                    <h2>
+                        Design your own market shock
+                    </h2>
+
+                </div>
+
+                <p>
+                    Adjust market variables to explore
+                    a hypothetical portfolio scenario.
+                </p>
+
+            </div>
+
+
+            <div class="shock-grid">
+
+                {% for s in sliders %}
+
+                <div class="shock-control">
+
+                    <div class="shock-head">
+
+                        <label>
+                            {{ s.label }}
+                        </label>
+
+                        <strong
+                            id="{{ s.id }}-val"
+                        >
+                            {{ s.default }}
+                        </strong>
+
+                    </div>
+
+                    <input
+                        type="range"
+                        class="shock"
+                        id="{{ s.id }}"
+                        min="{{ s.min }}"
+                        max="{{ s.max }}"
+                        value="{{ s.default }}"
+                    >
+
+                    <div class="range-scale">
+
+                        <span>
+                            {{ s.min }}
+                        </span>
+
+                        <span>
+                            {{ s.max }}
+                        </span>
+
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+
+            <div
+                class="calculation-note"
+                id="custom-note"
+            ></div>
+
+
+            <div id="custom-out">
+
+                <div class="cards"></div>
+
+                <div class="notes"></div>
+
+                <div class="chart-card">
+
+                    <div
+                        class="chart"
+                        id="custom-chart"
+                    ></div>
+
+                </div>
+
+
+                <details>
+
+                    <summary>
+                        View asset-level stress breakdown
+                    </summary>
+
+                    <div class="table"></div>
+
+                </details>
+
+            </div>
+
+        </section>
+
+
+        <!-- ============================================
+             COMPARE
+        ============================================= -->
+
+        <section
+            class="panel"
+            id="p-compare"
+        >
+
+            <div class="panel-heading">
+
+                <div>
+
+                    <span class="section-number">
+                        SCENARIO MATRIX
+                    </span>
+
+                    <h2>
+                        Compare portfolio resilience
+                    </h2>
+
+                </div>
+
+                <p>
+                    Compare the estimated percentage
+                    impact across every stress scenario.
+                </p>
+
+            </div>
+
+
+            <div class="chart-card">
+
+                <div
+                    class="chart"
+                    id="compare-chart"
+                ></div>
+
+            </div>
+
+
+            <div id="compare-table"></div>
+
+        </section>
+
+
+        <!-- DISCLAIMER -->
+
+        <footer>
+
+            <strong>
+                IMPORTANT
+            </strong>
+
+            <p>
+                This tool is intended for educational
+                and analytical use. Historical stress
+                assumptions are approximate and should
+                be reviewed before professional use.
+            </p>
+
+        </footer>
+
+    </main>
+
+</div>
+
+
+<!-- ====================================================
+     JAVASCRIPT
+===================================================== -->
+
+<script>
+
+const INK = "#15283B";
+const LOSS = "#B4473D";
+const GAIN = "#28765C";
+const GRID = "#E2E7E5";
+
+
+function money(x) {
+
+    const s = Math.abs(x).toLocaleString(
+        "en-IN",
+        {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }
+    );
+
+    return (
+        (x < 0 ? "-" : "")
+        + "₹"
+        + s
+        + " Cr"
+    );
+}
+
+
+function signed(x, digits) {
+
+    return (
+        (x > 0 ? "+" : "")
+        + x.toFixed(digits)
+    );
+}
+
+
+function chartLayout(title, height) {
+
+    return {
+
+        title: {
+            text: title,
+            x: 0,
+            font: {
+                family:
+                    "DM Serif Display, Georgia, serif",
+                size: 21,
+                color: INK
+            }
+        },
+
+        height: height,
+
+        margin: {
+            l: 55,
+            r: 25,
+            t: 70,
+            b: 95
+        },
+
+        font: {
+            family:
+                "IBM Plex Sans, Arial, sans-serif",
+            color: INK,
+            size: 12
+        },
+
+        paper_bgcolor:
+            "rgba(0,0,0,0)",
+
+        plot_bgcolor:
+            "rgba(0,0,0,0)",
+
+        showlegend:
+            false,
+
+        yaxis: {
+            gridcolor: GRID,
+            zerolinecolor: "#CBD3D0",
+            automargin: true
+        },
+
+        xaxis: {
+            showgrid: false,
+            automargin: true
+        }
+
+    };
+
+}
+
+
+const CONFIG = {
+
+    displayModeBar: false,
+
+    responsive: true
+
+};
+
+
+function gather() {
+
+    const holdings = {};
+
+    document
+        .querySelectorAll(".holding")
+        .forEach(function(el) {
+
+            holdings[
+                el.getAttribute("data-asset")
+            ] = parseFloat(el.value) || 0;
+
+        });
+
+
+    const custom = {};
+
+    document
+        .querySelectorAll(".shock")
+        .forEach(function(el) {
+
+            custom[el.id] =
+                parseFloat(el.value);
+
+        });
+
+
+    return {
+
+        holdings: holdings,
+
+        custom: custom,
+
+        duration:
+            parseFloat(
+                document
+                    .getElementById("duration")
+                    .value
+            ),
+
+        convexity:
+            parseFloat(
+                document
+                    .getElementById("convexity")
+                    .value
+            ),
+
+        loan:
+            parseFloat(
+                document
+                    .getElementById("loan")
+                    .value
+            ),
+
+        max_ltv:
+            parseFloat(
+                document
+                    .getElementById("max_ltv")
+                    .value
+            ),
+
+        scenario:
+            document
+                .getElementById("scenario")
+                .value
+    };
+
+}
+
+
+function renderResult(
+    boxId,
+    chartId,
+    r
+) {
+
+    const box =
+        document.getElementById(boxId);
+
+    const deltaClass =
+        r.pct < 0
+        ? "loss"
+        : "gain";
+
+
+    box
+        .querySelector(".cards")
+        .innerHTML = `
+
+        <article class="metric-card">
+
+            <span class="metric-label">
+                PORTFOLIO BEFORE
+            </span>
+
+            <strong>
+                ${money(r.before)}
+            </strong>
+
+            <small>
+                Starting portfolio value
+            </small>
+
+        </article>
+
+
+        <article class="metric-card">
+
+            <span class="metric-label">
+                PORTFOLIO AFTER
+            </span>
+
+            <strong>
+                ${money(r.after)}
+            </strong>
+
+            <small class="${deltaClass}">
+                ${signed(r.pct, 1)}%
+            </small>
+
+        </article>
+
+
+        <article class="metric-card">
+
+            <span class="metric-label">
+                GAIN / LOSS
+            </span>
+
+            <strong class="${deltaClass}">
+                ${money(r.pnl)}
+            </strong>
+
+            <small>
+                Estimated stress impact
+            </small>
+
+        </article>
+
+
+        <article class="metric-card">
+
+            <span class="metric-label">
+                NET WORTH AFTER LOAN
+            </span>
+
+            <strong>
+                ${money(r.net_worth)}
+            </strong>
+
+            <small>
+                Portfolio less outstanding loan
+            </small>
+
+        </article>
+
+    `;
+
+
+    let notes = "";
+
+
+    if (r.leverage) {
+
+        notes += `
+
+            <div class="note ${r.leverage.status}">
+
+                <span class="note-icon">
+                    ${r.leverage.status === "bad"
+                        ? "!"
+                        : "✓"}
+                </span>
+
+                <div>
+
+                    <strong>
+                        LEVERAGE CHECK
+                    </strong>
+
+                    <p>
+                        ${r.leverage.text}
+                    </p>
+
+                </div>
+
+            </div>
+
+        `;
+
+    }
+
+
+    if (r.after > 0) {
+
+        notes += `
+
+            <div class="note info">
+
+                <span class="note-icon">
+                    ₹
+                </span>
+
+                <div>
+
+                    <strong>
+                        POST-SHOCK LIQUIDITY
+                    </strong>
+
+                    <p>
+
+                        Approximately
+                        <b>${money(r.liquid)}</b>
+                        could be raised within about
+                        a week after the shock,
+                        representing
+                        <b>${r.liquid_pct.toFixed(0)}%</b>
+                        of the post-shock portfolio.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+        `;
+
+    }
+
+
+    box
+        .querySelector(".notes")
+        .innerHTML = notes;
+
+
+    const moves =
+        r.rows.filter(
+            function(x) {
+                return Math.abs(x.pnl) > 1e-9;
+            }
+        );
+
+
+    const measure = ["absolute"];
+
+    const xs = ["Before"];
+
+    const ys = [r.before];
+
+    const textValues = [
+        money(r.before)
+    ];
+
+
+    moves.forEach(function(m) {
+
+        measure.push("relative");
+
+        xs.push(m.asset);
+
+        ys.push(m.pnl);
+
+        textValues.push(
+            signed(m.pnl, 2)
+        );
+
+    });
+
+
+    measure.push("total");
+
+    xs.push("After");
+
+    ys.push(0);
+
+    textValues.push(
+        money(r.after)
+    );
+
+
+    Plotly.react(
+
+        chartId,
+
+        [{
+
+            type:
+                "waterfall",
+
+            measure:
+                measure,
+
+            x:
+                xs,
+
+            y:
+                ys,
+
+            text:
+                textValues,
+
+            textposition:
+                "outside",
+
+            decreasing: {
+                marker: {
+                    color: LOSS
+                }
+            },
+
+            increasing: {
+                marker: {
+                    color: GAIN
+                }
+            },
+
+            totals: {
+                marker: {
+                    color: INK
+                }
+            },
+
+            connector: {
+                line: {
+                    color: "#CBD3D0",
+                    dash: "dot"
+                }
+            },
+
+            hoverinfo:
+                "x+text"
+
+        }],
+
+        chartLayout(
+            "How each asset changes portfolio value",
+            470
+        ),
+
+        CONFIG
+    );
+
+
+    const rows =
+        r.rows
+        .map(function(x) {
+
+            return `
+
+                <tr>
+
+                    <td>
+                        <strong>
+                            ${x.asset}
+                        </strong>
+                    </td>
+
+                    <td>
+                        ${x.before.toFixed(2)}
+                    </td>
+
+                    <td class="${
+                        x.shock < 0
+                        ? "loss"
+                        : x.shock > 0
+                        ? "gain"
+                        : ""
+                    }">
+
+                        ${signed(
+                            x.shock,
+                            1
+                        )}%
+
+                    </td>
+
+                    <td class="${
+                        x.pnl < 0
+                        ? "loss"
+                        : x.pnl > 0
+                        ? "gain"
+                        : ""
+                    }">
+
+                        ${signed(
+                            x.pnl,
+                            2
+                        )}
+
+                    </td>
+
+                    <td>
+                        ${x.after.toFixed(2)}
+                    </td>
+
+                </tr>
+
+            `;
+
+        })
+        .join("");
+
+
+    box
+        .querySelector(".table")
+        .innerHTML = `
+
+        <div class="table-wrap">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Asset Class
+                        </th>
+
+                        <th>
+                            Before ₹ Cr
+                        </th>
+
+                        <th>
+                            Shock
+                        </th>
+
+                        <th>
+                            Gain / Loss
+                        </th>
+
+                        <th>
+                            After ₹ Cr
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+                    ${rows}
+                </tbody>
+
+            </table>
+
+        </div>
+
+    `;
+
+}
+
+
+function renderCompare(list) {
+
+    const shown =
+        list.slice().reverse();
+
+
+    Plotly.react(
+
+        "compare-chart",
+
+        [{
+
+            type:
+                "bar",
+
+            orientation:
+                "h",
+
+            x:
+                shown.map(
+                    function(s) {
+                        return s.pct;
+                    }
+                ),
+
+            y:
+                shown.map(
+                    function(s) {
+                        return s.name;
+                    }
+                ),
+
+            marker: {
+
+                color:
+                    shown.map(
+                        function(s) {
+
+                            return (
+                                s.pct < 0
+                                ? LOSS
+                                : GAIN
+                            );
+
+                        }
+                    )
+
+            },
+
+            text:
+                shown.map(
+                    function(s) {
+                        return (
+                            signed(
+                                s.pct,
+                                1
+                            )
+                            + "%"
+                        );
+                    }
+                ),
+
+            textposition:
+                "outside",
+
+            hoverinfo:
+                "y+text"
+
+        }],
+
+        Object.assign(
+
+            chartLayout(
+                "Portfolio impact across stress scenarios",
+                440
+            ),
+
+            {
+
+                xaxis: {
+
+                    title:
+                        "Portfolio change (%)",
+
+                    gridcolor:
+                        GRID,
+
+                    zerolinecolor:
+                        "#CBD3D0",
+
+                    automargin:
+                        true
+
+                },
+
+                yaxis: {
+
+                    showgrid:
+                        false,
+
+                    automargin:
+                        true
+
+                },
+
+                margin: {
+
+                    l: 20,
+                    r: 45,
+                    t: 70,
+                    b: 65
+
+                }
+
+            }
+
+        ),
+
+        CONFIG
+    );
+
+
+    const rows =
+        list
+        .map(function(s) {
+
+            const cls =
+                s.pct < 0
+                ? "loss"
+                : "gain";
+
+            return `
+
+                <tr>
+
+                    <td>
+                        <strong>
+                            ${s.name}
+                        </strong>
+                    </td>
+
+                    <td class="${cls}">
+                        ${signed(
+                            s.pnl,
+                            2
+                        )}
+                    </td>
+
+                    <td class="${cls}">
+                        ${signed(
+                            s.pct,
+                            1
+                        )}%
+                    </td>
+
+                </tr>
+
+            `;
+
+        })
+        .join("");
+
+
+    document
+        .getElementById(
+            "compare-table"
+        )
+        .innerHTML = `
+
+        <div class="table-wrap comparison-table">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Scenario
+                        </th>
+
+                        <th>
+                            Gain / Loss ₹ Cr
+                        </th>
+
+                        <th>
+                            Change
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+                    ${rows}
+                </tbody>
+
+            </table>
+
+        </div>
+
+    `;
+
+}
+
+
+function run() {
+
+    fetch(
+
+        "/api/stress",
+
+        {
+
+            method:
+                "POST",
+
+            headers: {
+                "Content-Type":
+                    "application/json"
+            },
+
+            body:
+                JSON.stringify(
+                    gather()
+                )
+
+        }
+
+    )
+
+    .then(function(res) {
+
+        return res.json();
+
+    })
+
+    .then(function(d) {
+
+        const hero =
+            document.getElementById(
+                "hero"
+            );
+
+
+        if (d.error) {
+
+            hero.innerHTML = `
+
+                <div class="hero-error">
+
+                    <span>!</span>
+
+                    <div>
+
+                        <strong>
+                            INPUT REQUIRED
+                        </strong>
+
+                        <p>
+                            ${d.error}
+                        </p>
+
+                    </div>
+
+                </div>
+
+            `;
+
+            return;
+        }
+
+
+        hero.innerHTML = `
+
+            <div class="hero-left">
+
+                <span class="hero-kicker">
+                    WORST HISTORICAL CASE
+                </span>
+
+                <h3>
+                    ${d.worst.name}
+                </h3>
+
+                <p>
+
+                    Based on the current portfolio
+                    allocation, this is the most
+                    damaging historical scenario
+                    included in the model.
+
+                </p>
+
+            </div>
+
+
+            <div class="hero-flow">
+
+                <div class="hero-value">
+
+                    <span>
+                        TODAY
+                    </span>
+
+                    <strong>
+                        ${money(d.total)}
+                    </strong>
+
+                </div>
+
+
+                <div class="impact-line">
+
+                    <div class="impact-arrow">
+                        →
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            -${d.worst.pct.toFixed(1)}%
+                        </strong>
+
+                        <span>
+                            ${money(d.worst.loss)}
+                            IMPACT
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="hero-value after">
+
+                    <span>
+                        AFTER SHOCK
+                    </span>
+
+                    <strong>
+                        ${money(d.worst.after)}
+                    </strong>
+
+                </div>
+
+            </div>
+
+        `;
+
+
+        renderResult(
+            "hist-out",
+            "hist-chart",
+            d.historical
+        );
+
+
+        renderResult(
+            "custom-out",
+            "custom-chart",
+            d.custom
+        );
+
+
+        document
+            .getElementById(
+                "custom-note"
+            )
+            .innerHTML = `
+
+                <strong>
+                    MODEL OUTPUT
+                </strong>
+
+                <span>
+
+                    Estimated debt impact from
+                    duration and convexity:
+                    <b>
+                        ${d.debt_shock.toFixed(2)}%
+                    </b>
+
+                    &nbsp;·&nbsp;
+
+                    International equity impact
+                    after INR adjustment:
+                    <b>
+                        ${d.intl_shock.toFixed(2)}%
+                    </b>
+
+                </span>
+
+            `;
+
+
+        renderCompare(
+            d.compare
+        );
+
+    })
+
+    .catch(function() {
+
+        document
+            .getElementById(
+                "hero"
+            )
+            .innerHTML = `
+
+            <div class="hero-error">
+
+                <span>!</span>
+
+                <div>
+
+                    <strong>
+                        CONNECTION ERROR
+                    </strong>
+
+                    <p>
+                        Could not reach the server.
+                        Refresh the page and try again.
+                    </p>
+
+                </div>
+
+            </div>
+
+        `;
+
+    });
+
+}
+
+
+let timer = null;
+
+
+function schedule() {
+
+    clearTimeout(timer);
+
+    timer =
+        setTimeout(
+            run,
+            180
+        );
+
+}
+
+
+document
+    .querySelectorAll(
+        "input, select"
+    )
+    .forEach(function(el) {
+
+        el.addEventListener(
+            "input",
+            function() {
+
+                const label =
+                    document
+                    .getElementById(
+                        el.id + "-val"
+                    );
+
+
+                if (label) {
+
+                    label.textContent =
+                        el.id === "max_ltv"
+                        ? el.value + "%"
+                        : el.value;
+
+                }
+
+
+                schedule();
+
+            }
+        );
+
+    });
+
+
+document
+    .querySelectorAll(".tab")
+    .forEach(function(tab) {
+
+        tab.addEventListener(
+            "click",
+            function() {
+
+                document
+                    .querySelectorAll(".tab")
+                    .forEach(function(t) {
+
+                        t.classList
+                            .remove("active");
+
+                    });
+
+
+                document
+                    .querySelectorAll(".panel")
+                    .forEach(function(p) {
+
+                        p.classList
+                            .remove("active");
+
+                    });
+
+
+                tab.classList
+                    .add("active");
+
+
+                const panel =
+                    document
+                    .getElementById(
+                        tab.getAttribute(
+                            "data-panel"
+                        )
+                    );
+
+
+                panel.classList
+                    .add("active");
+
+
+                panel
+                    .querySelectorAll(
+                        ".chart"
+                    )
+                    .forEach(
+                        function(c) {
+
+                            if (c.data) {
+
+                                Plotly
+                                    .Plots
+                                    .resize(c);
+
+                            }
+
+                        }
+                    );
+
+            }
+        );
+
+    });
+
+
+run();
+
+</script>
+
+</body>
+</html>
